@@ -1,4 +1,4 @@
-package Communications;
+package communications;
 
 import java.util.ArrayList;
 import EnvironmentalWidgets.CurrentWidgetDataSet;

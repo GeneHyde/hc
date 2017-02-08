@@ -1,4 +1,4 @@
-package Communications;
+package communications;
 
 import DataObjects.CurrentLaunchInformation;
 

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package Communications;
+package communications;
 
 /*
  * To change this license header, choose License Headers in Project Properties.

@@ -1,4 +1,4 @@
-package Communications;
+package communications;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
