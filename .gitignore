@@ -10,3 +10,6 @@
 ## DB Files ##
 *.dat
 
+/HostController/build/
+/HostController/dist/
+/HostController/nbproject/private/
