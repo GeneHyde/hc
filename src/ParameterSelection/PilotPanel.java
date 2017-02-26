@@ -1,142 +1,130 @@
 package ParameterSelection;
 
-import AddEditPanels.AddEditPilotPanel;
 import Communications.Observer;
-import Configuration.UnitConversionRate;
 import DataObjects.CurrentDataObjectSet;
-import DataObjects.RecentLaunchSelections;
 import DataObjects.Pilot;
-import DatabaseUtilities.DatabaseUnitSelectionUtilities;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.DefaultListModel;
-import javax.swing.JScrollPane;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.JTextArea;
-import javax.swing.JRadioButton;
-import java.awt.Font;
-import javax.swing.JButton;
-import javax.swing.ButtonGroup;
-import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS;
-import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS;
-import javax.swing.border.MatteBorder;
 import Configuration.UnitLabelUtilities;
+import DatabaseUtilities.DatabaseEntrySelect;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.SubScene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.util.StringConverter;
 
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
-public class PilotPanel implements Observer{
+public class PilotPanel implements Observer {
 
     private Boolean shown;
     private CurrentDataObjectSet currentData;
 
     GridPane scenarioHomePane;
+    SubScene editPilotPanel;
 
-    @FXML TableView pilotTable;
-    @FXML Slider preferenceSlider;
+    @FXML
+    TableView pilotTable;
+    @FXML
+    Slider preferenceSlider;
 
-    @FXML Label flightWeightLabel;
-    @FXML Label capabiltiyLabel;
+    @FXML
+    Label flightWeightLabel;
+    @FXML
+    Label capabiltiyLabel;
 
-    @FXML Label flightWeightUnitLabel;
+    @FXML
+    Label flightWeightUnitLabel;
 
     private int flightWeightUnitsID;
 
-    public PilotPanel(GridPane scenarioHomePane) {
+    public PilotPanel(SubScene editPilotPanel, GridPane scenarioHomePane) {
         currentData = CurrentDataObjectSet.getCurrentDataObjectSet();
+        this.editPilotPanel = editPilotPanel;
         this.scenarioHomePane = scenarioHomePane;
     }
 
     @FXML
-    protected void initialize()
-    {
-        setupUnits();
+    protected void initialize() {
+        TableColumn firstCol = (TableColumn) pilotTable.getColumns().get(0);
+        firstCol.setCellValueFactory(new PropertyValueFactory<>("First Name"));
+        TableColumn lastCol = (TableColumn) pilotTable.getColumns().get(1);
+        lastCol.setCellValueFactory(new PropertyValueFactory<>("Last Name"));
+
+        pilotTable.setItems(FXCollections.observableList(DatabaseEntrySelect.getPilots()));
+        pilotTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue observable, Object oldValue, Object newValue) -> {
+            if (newValue != null) {
+                currentData.setCurrentPilot((Pilot) newValue);
+                loadData();
+            }
+        });
+        pilotTable.getSelectionModel().selectFirst();
         loadData();
 
-        preferenceSlider.setLabelFormatter(new StringConverter<Double>()
-        {
+        preferenceSlider.setLabelFormatter(new StringConverter<Double>() {
             @Override
-            public String toString(Double object)
-            {
-                if(object.doubleValue() == 0)
-                {
+            public String toString(Double d) {
+                if (d == 0) {
                     return "Student";
                 }
-                if(object.doubleValue() == .5)
-                {
+                if (d == .5) {
                     return "Proficient";
                 }
-                if(object.doubleValue() == 1)
-                {
+                if (d == 1) {
                     return "Advanced";
                 }
-                return object.toString();
+                return d.toString();
             }
 
             @Override
-            public Double fromString(String string)
-            {
-                if(string.equalsIgnoreCase("Student"))
-                {
-                    return new Double(0);
+            public Double fromString(String string) {
+                if (string.equalsIgnoreCase("Student")) {
+                    return 0.0;
                 }
-                if(string.equalsIgnoreCase("Proficient"))
-                {
-                    return new Double(.5);
+                if (string.equalsIgnoreCase("Proficient")) {
+                    return 0.5;
                 }
-                if(string.equalsIgnoreCase("Advanced"))
-                {
-                    return new Double(1);
+                if (string.equalsIgnoreCase("Advanced")) {
+                    return 1.0;
                 }
                 return Double.parseDouble(string);
             }
         });
     }
 
-    public void loadData()
-    {
-
+    public void loadData() {
+        if (currentData.getCurrentPilot() != null) {
+            flightWeightLabel.setText("" + currentData.getCurrentPilot().getWeight());
+            //TODO
+            //capabiltiyLabel.setText("" + currentData.getCurrentPilot().getCapability());
+            preferenceSlider.adjustValue(currentData.getCurrentPilot().getPreference());
+            setupUnits();
+        }
     }
 
-    public void setupUnits()
-    {
+    public void setupUnits() {
         flightWeightUnitsID = currentData.getCurrentProfile().getUnitSetting("flightWeight");
         flightWeightUnitLabel.setText(UnitLabelUtilities.lenghtUnitIndexToString(flightWeightUnitsID));
     }
-    
+
     @Override
-    public void update()
-    {
+    public void update() {
         setupUnits();
         DefaultListModel pilotModel = new DefaultListModel();
         pilotModel.clear();
 
-
         Pilot currentPilot = currentData.getCurrentPilot();
     }
-    
+
     private Observer getObserver() {
         return this;
     }
 
-    public void clear()
-    {
+    public void clear() {
 
     }
 
@@ -145,5 +133,13 @@ public class PilotPanel implements Observer{
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    @FXML public void PilotFinishButton_Click(javafx.event.ActionEvent e) { scenarioHomePane.toFront(); }
+    @FXML
+    public void PilotFinishButton_Click(ActionEvent e) {
+        scenarioHomePane.toFront();
+    }
+
+    @FXML
+    public void NewPilotButton_Click(ActionEvent e) {
+        editPilotPanel.toFront();
+    }
 }

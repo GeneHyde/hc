@@ -1,84 +1,96 @@
 package ParameterSelection;
 
-import AddEditPanels.AddEditWinchPosFrame;
 import Communications.Observer;
-import Configuration.UnitConversionRate;
 import Configuration.UnitLabelUtilities;
 import DataObjects.CurrentDataObjectSet;
-import DataObjects.RecentLaunchSelections;
 import DataObjects.WinchPosition;
+import DatabaseUtilities.DatabaseEntrySelect;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.control.Label;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 import javax.swing.*;
-import javax.swing.border.MatteBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Created by micha on 10/18/2016.
  */
-public class WinchPositionPanel extends JPanel implements Observer
-{
+public class WinchPositionPanel extends JPanel implements Observer {
+
     private CurrentDataObjectSet currentData;
     private int winchPosAltitudeUnitsID;
 
+    SubScene editWinchPositionPanel;
     GridPane scenarioHomePane;
 
     @FXML
-    TableView gliderPositionTable;
+    TableView winchPositionTable;
 
-    @FXML Label positionNameLabel;
-    @FXML Label altitudeLabel;
-    @FXML Label longitudeLabel;
-    @FXML Label latitudeLabel;
+    @FXML
+    Label positionNameLabel;
+    @FXML
+    Label altitudeLabel;
+    @FXML
+    Label longitudeLabel;
+    @FXML
+    Label latitudeLabel;
 
-    @FXML Label altitudeUnitLabel;
-    @FXML Label longitudeUnitLabel;
-    @FXML Label latitudeUnitLabel;
+    @FXML
+    Label altitudeUnitLabel;
+    @FXML
+    Label longitudeUnitLabel;
+    @FXML
+    Label latitudeUnitLabel;
 
-    public WinchPositionPanel(GridPane scenarioHomePane)
-    {
+    public WinchPositionPanel(SubScene editWinchPositionPanel, GridPane scenarioHomePane) {
         currentData = CurrentDataObjectSet.getCurrentDataObjectSet();
+        this.editWinchPositionPanel = editWinchPositionPanel;
         this.scenarioHomePane = scenarioHomePane;
     }
 
-    @FXML protected void initialize()
-    {
+    @FXML
+    protected void initialize() {
+        TableColumn winchPosCol = (TableColumn) winchPositionTable.getColumns().get(0);
+        winchPosCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        winchPositionTable.setItems(FXCollections.observableList(DatabaseEntrySelect.getWinchPositions()));
+        winchPositionTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue observable, Object oldValue, Object newValue) -> {
+            if (newValue != null) {
+                currentData.setCurrentWinchPosition((WinchPosition) newValue);
+                loadData();
+            }
+        });
+        winchPositionTable.getSelectionModel().selectFirst();
         loadData();
-        setupUnits();
     }
 
-    public void loadData()
-    {
-
+    public void loadData() {
+        if (currentData.getCurrentWinchPosition() != null) {
+            positionNameLabel.setText("" + currentData.getCurrentWinchPosition().getName());
+            altitudeLabel.setText("" + currentData.getCurrentWinchPosition().getElevation());
+            longitudeLabel.setText("" + currentData.getCurrentWinchPosition().getLongitude());
+            latitudeLabel.setText("" + currentData.getCurrentWinchPosition().getLatitude());
+            setupUnits();
+        }
     }
 
-    public void setupUnits()
-    {
+    public void setupUnits() {
         winchPosAltitudeUnitsID = currentData.getCurrentProfile().getUnitSetting("winchPosAltitude");
         String winchPosAltitudeUnitsString = UnitLabelUtilities.lenghtUnitIndexToString(winchPosAltitudeUnitsID);
     }
 
     @Override
-    public void update()
-    {
+    public void update() {
 
     }
 
     @Override
-    public void update(String s)
-    {
+    public void update(String s) {
 
     }
 
@@ -86,10 +98,17 @@ public class WinchPositionPanel extends JPanel implements Observer
         return this;
     }
 
-    public void clear()
-    {
+    public void clear() {
 
     }
 
-    @FXML public void AirfieldFinishButton_Click(javafx.event.ActionEvent e) { scenarioHomePane.toFront(); }
+    @FXML
+    public void AirfieldFinishButton_Click(javafx.event.ActionEvent e) {
+        scenarioHomePane.toFront();
+    }
+
+    @FXML
+    public void NewWinchPositionButton_Click(ActionEvent e) {
+        editWinchPositionPanel.toFront();
+    }
 }
